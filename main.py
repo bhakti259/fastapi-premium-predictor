@@ -13,7 +13,7 @@ Version: 1.0.0
 
 from fastapi import Body, FastAPI, Path, HTTPException, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, field_validator
 from typing import List, Annotated, Literal, Optional
 import json
 
@@ -55,6 +55,18 @@ class Patient(BaseModel):
     height: Annotated[float, Field(..., gt=0, description="Height in meters", example=1.75)]
     weight: Annotated[float, Field(..., gt=0, description="Weight in kilograms", example=70.0)]
 
+    @field_validator("gender", mode="before")
+    @classmethod
+    def validate_gender(cls, value: str) -> str:
+        """Normalize gender input (case-insensitive) before validation."""
+        if not isinstance(value, str):
+            raise ValueError("Gender must be a string")
+        normalized = value.strip().capitalize()
+        if normalized not in ["Male", "Female", "Other"]:
+            raise ValueError("Gender must be Male, Female, or Other")
+        return normalized
+    
+     
     @computed_field
     @property
     def bmi(self) -> float:
